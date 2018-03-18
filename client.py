@@ -1,6 +1,7 @@
 import socket
 from threading import Thread 
 import tkinter
+from tkinter import filedialog
 from ast import literal_eval
 
 class Chatme(tkinter.Tk):
@@ -41,8 +42,10 @@ class Chatme(tkinter.Tk):
         self.send_button = tkinter.Button(self.bottom_frame, text="Send", command=self.send)
         self.send_button.configure(state='disabled')
         self.entry_field.bind("<Return>", self.send)
+        self.send_file_button = tkinter.Button(self.bottom_frame, text="Send File", command=self.send_file)
         
         self.send_button.grid(row=7,column=0)
+        self.send_file_button.grid(row=8,column=0)
         self.entry_field.grid(row=6,column=0)
         
         self.top_frame.grid(row=0,column=0)
@@ -69,16 +72,26 @@ class Chatme(tkinter.Tk):
         """Handles receiving of messages."""
         while True:
             try:
-                msg = self.client_socket.recv(self.buffer).decode('utf-8')
-                if '[' not in msg:
-                    self.msg_list.insert(tkinter.END, msg)
-                else:
-                    self.active_clients = literal_eval(msg)
-                    self.active_clients.insert(0,'global')
-                    self.roles['menu'].delete(0,tkinter.END)
-                    self.message.set('global')
-                    for client in self.active_clients:
-                        self.roles['menu'].add_command(label=client,command=tkinter._setit(self.message,client))
+                try:
+                    msg = self.client_socket.recv(self.buffer).decode('utf-8')
+                    if '[' not in msg:
+                        self.msg_list.insert(tkinter.END, msg)
+                    else:
+                        self.active_clients = literal_eval(msg)
+                        self.active_clients.insert(0,'global')
+                        self.roles['menu'].delete(0,tkinter.END)
+                        self.message.set('global')
+                        for client in self.active_clients:
+                            self.roles['menu'].add_command(label=client,command=tkinter._setit(self.message,client))
+                except:
+                    with open('received_file', 'wb') as f:
+                        while True:
+                            print('receiving data...')
+                            data = self.client_socket.recv(1024)
+                            print('data=%s', (data))
+                            if not data:
+                                break
+                            f.write(data)
             except OSError:  # Possibly client has left the chat.
                 break
 
@@ -98,6 +111,11 @@ class Chatme(tkinter.Tk):
             msg = str(literal_eval(self.message.get())['Address']) + ' From ' + self.username.get() + ': ' + msg
             self.client_socket.send(bytes(msg, "utf8"))
 
+
+    def send_file(self):
+        self.filename = filedialog.askopenfilename()
+        temp = open(self.filename,'rb')
+        self.client_socket.sendfile(temp)
 
     def set_username(self,event=None):
         username = self.username.get()

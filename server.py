@@ -10,11 +10,16 @@ active = []
 addr = (host, port)
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(addr)
+groups = []
 
 def broadcast(msg, prefix=""):  # prefix is for name identification.
 	"""Broadcasts a message to all the clients."""
 	for sock in clients:
 		sock.send(bytes(prefix, "utf8")+msg)
+
+def broadcast_file(msg):
+	for sock in clients:
+		sock.send(msg)
 
 def private_message(address,message):
 	message = '<private>' + message
@@ -43,21 +48,25 @@ def handle_client(client):  # Takes client socket as argument.
 		broadcast(bytes(str(active),'utf-8'))
 		while True:
 			msg = client.recv(2048)
-			if '(' in msg.decode('utf-8') and ')' in msg.decode('utf-8'):
-				temp = msg.decode('utf-8').split(')')
-				address = temp[0] + ')'
-				private_message(address,temp[1])
-			elif msg != bytes("{quit}", "utf8"):
-				broadcast(msg, "<global>" + name + ": ")
-				print(client)
-			else:
-				#client.send(bytes("{quit}", "utf8"))
-				client.close()
-				active.remove({'Address':addresses[client],'Name':clients[client]})
-				del clients[client]
-				broadcast(bytes("%s has left the chat." % name, "utf8"))
-				broadcast(bytes(str(active),'utf-8'))
-				break
+			try:
+				if '(' in msg.decode('utf-8') and ')' in msg.decode('utf-8'):
+					temp = msg.decode('utf-8').split(')')
+					address = temp[0] + ')'
+					private_message(address,temp[1])
+				elif msg != bytes("{quit}", "utf8"):
+					broadcast(msg, "<global>" + name + ": ")
+					print(client)
+				else:
+					#client.send(bytes("{quit}", "utf8"))
+					client.close()
+					active.remove({'Address':addresses[client],'Name':clients[client]})
+					del clients[client]
+					broadcast(bytes("%s has left the chat." % name, "utf8"))
+					broadcast(bytes(str(active),'utf-8'))
+					break
+			except:
+				print(msg)
+				broadcast_file(msg)
 	except Exception as e:
 		print(e)
 
