@@ -79,6 +79,7 @@ def create_group(msg):
 		for sock in clients:
 			if member in str(sock):
 				members.append(sock)
+	del members[0]
 	msg = '#create_group ' + group_name
 	for member in members:
 		member.send(bytes(msg,'utf-8'))
@@ -119,31 +120,29 @@ def handle_client(client):  # Takes client socket as argument.
 		active.append(temp_client)
 		broadcast(bytes(str(active),'utf-8'))
 		while True:
-			try:
-				msg = client.recv(2048)
-				if '#join_name' in msg.decode('utf-8'):
-					join_group(msg)
-				elif '#group_text' in msg.decode('utf-8'):
-					print('hello')
-					message_group(msg.decode())
-				elif '#group_name' in msg.decode('utf-8'):
-					create_group(msg.decode('utf-8'))
-				elif '(' in msg.decode('utf-8') and ')' in msg.decode('utf-8'):
-					temp = msg.decode('utf-8').split(')')
-					address = temp[0] + ')'
-					private_message(address,temp[1])
-				elif msg != bytes("{quit}", "utf8"):
-					broadcast(msg, "<global>" + name + ": ")
-					print(client)
-					#client.close()
-				else:
-					#client.send(bytes("{quit}", "utf8"))
-					active.remove({'Address':addresses[client],'Name':clients[client]})
-					del clients[client]
-					broadcast(bytes("%s has left the chat." % name, "utf8"))
-					broadcast(bytes(str(active),'utf-8'))
-					break
-			except:
+			msg = client.recv(1024)
+			if '#join_name' in msg.decode('utf-8'):
+				join_group(msg)
+			elif '#group_text' in msg.decode('utf-8'):
+				message_group(msg.decode())
+			elif '#group_name' in msg.decode('utf-8'):
+				create_group(msg.decode('utf-8'))
+			elif '(' in msg.decode('utf-8') and ')' in msg.decode('utf-8'):
+				temp = msg.decode('utf-8').split(')')
+				address = temp[0] + ')'
+				private_message(address,temp[1])
+			elif msg != bytes("{quit}", "utf8"):
+				broadcast(msg, "<global>" + name + ": ")
+				print(client)
+				#client.close()
+			elif msg.decode('utf-8') == '{quit}':
+				#client.send(bytes("{quit}", "utf8"))
+				active.remove({'Address':addresses[client],'Name':clients[client]})
+				del clients[client]
+				broadcast(bytes("%s has left the chat." % name, "utf8"))
+				broadcast(bytes(str(active),'utf-8'))
+				break
+			else:
 				print('hello')
 				broadcast_file(msg)
 	except Exception as e:

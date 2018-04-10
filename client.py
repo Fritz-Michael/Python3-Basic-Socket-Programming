@@ -59,8 +59,8 @@ class GroupChat(tkinter.Tk):
 		msg +=  self.entry_field.get() + '\n'
 		msg += '#sender ' + self.username + '\n'
 		msg += '#name ' + self.group_name
-
-		self.my_msg.set("")  # Clears input field.
+		print('send')
+		self.entry_field.delete(0,tkinter.END)  # Clears input field.
 		self.client_socket.send(bytes(msg, "utf8"))
 
 	def receive(self):
@@ -68,6 +68,7 @@ class GroupChat(tkinter.Tk):
 			msg = self.client_socket.recv(1024).decode('utf-8')
 			if '#group' in msg:
 				msg = msg.split(' ')
+				print(msg)
 				del msg[0]
 				msg = ''.join(msg)
 				self.msg_list.insert(tkinter.END, msg)
