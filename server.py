@@ -79,7 +79,8 @@ def create_group(msg):
 		for sock in clients:
 			if member in str(sock):
 				members.append(sock)
-	del members[0]
+	members = list(set(members))
+	print(members)
 	msg = '#create_group ' + group_name
 	for member in members:
 		member.send(bytes(msg,'utf-8'))

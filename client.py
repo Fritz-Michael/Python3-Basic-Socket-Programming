@@ -66,10 +66,13 @@ class GroupChat(tkinter.Tk):
 	def receive(self):
 		while True:
 			msg = self.client_socket.recv(1024).decode('utf-8')
+			temp = ''
 			if '#group' in msg:
 				msg = msg.split(' ')
-				print(msg)
 				del msg[0]
+				for x in msg:
+					temp += x + ' '
+				msg = temp
 				msg = ''.join(msg)
 				self.msg_list.insert(tkinter.END, msg)
 
