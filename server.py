@@ -12,6 +12,78 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(addr)
 groups = []
 
+def join_group(msg):
+	msg = msg.decode('utf-8')
+	info = msg.split('\n')
+	group_name = info[0].split(' ')[1]
+	group_password = info[1].split(' ')[1]
+	group_user = info[2].split(' ')[1]
+	is_found = False
+	is_approve = False
+	for ctr, val in enumerate(groups):
+		if val['Name'] == group_name:
+			is_found = True
+			grp = ctr
+			break
+
+	for addr in active:
+		if addr['Name'] == group_user:
+			print('found address!')
+			group_user = addr['Address']
+
+	if is_found:
+		print('group found!')
+		if groups[ctr]['Password'] == group_password:
+			print('correct password!')
+			for sock in clients:
+				print(sock)
+				if str(group_user) in str(sock):
+					print('approves!')
+					groups[ctr]['Members'].append(sock)
+					msg = '#create_group ' + group_name
+					sock.send(bytes(msg,'utf-8'))
+					is_approve = True
+					break
+
+	if not is_approve:
+		for sock in clients:
+			if str(group_user) in str(sock):
+				msg = '<private> Unable to join group'
+				sock.send(bytes(msg,'utf-8'))
+				is_approve = True
+				break
+
+def message_group(msg):
+	info = msg.split('\n')
+	print(info)
+	msg = '#group '
+	sender = info[2].split(' ')[1]
+	msg += sender + ':  ' + info[1]
+	group_name = info[3].split(' ')[1]
+	group = list(filter(lambda x: x['Name'] == group_name,groups))[0]
+
+	for member in group['Members']:
+		member.send(bytes(msg,'utf-8'))
+
+
+def create_group(msg):
+	members = []
+	group_info = msg.split('\n')
+	group_name = group_info[0].split(' ')[1]
+	group_password = group_info[1].split(' ')[1]
+	group_members = group_info[2].split(' ')
+	group_members = [x for x in group_members]
+	del group_members[0]
+
+	for member in group_members:
+		for sock in clients:
+			if member in str(sock):
+				members.append(sock)
+	msg = '#create_group ' + group_name
+	for member in members:
+		member.send(bytes(msg,'utf-8'))
+	groups.append({'Name':group_name,'Password':group_password,'Members':members})
+
 def broadcast(msg, prefix=""):  # prefix is for name identification.
 	"""Broadcasts a message to all the clients."""
 	for sock in clients:
@@ -47,25 +119,32 @@ def handle_client(client):  # Takes client socket as argument.
 		active.append(temp_client)
 		broadcast(bytes(str(active),'utf-8'))
 		while True:
-			msg = client.recv(2048)
 			try:
-				if '(' in msg.decode('utf-8') and ')' in msg.decode('utf-8'):
+				msg = client.recv(2048)
+				if '#join_name' in msg.decode('utf-8'):
+					join_group(msg)
+				elif '#group_text' in msg.decode('utf-8'):
+					print('hello')
+					message_group(msg.decode())
+				elif '#group_name' in msg.decode('utf-8'):
+					create_group(msg.decode('utf-8'))
+				elif '(' in msg.decode('utf-8') and ')' in msg.decode('utf-8'):
 					temp = msg.decode('utf-8').split(')')
 					address = temp[0] + ')'
 					private_message(address,temp[1])
 				elif msg != bytes("{quit}", "utf8"):
 					broadcast(msg, "<global>" + name + ": ")
 					print(client)
+					#client.close()
 				else:
 					#client.send(bytes("{quit}", "utf8"))
-					client.close()
 					active.remove({'Address':addresses[client],'Name':clients[client]})
 					del clients[client]
 					broadcast(bytes("%s has left the chat." % name, "utf8"))
 					broadcast(bytes(str(active),'utf-8'))
 					break
 			except:
-				print(msg)
+				print('hello')
 				broadcast_file(msg)
 	except Exception as e:
 		print(e)
