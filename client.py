@@ -122,9 +122,9 @@ class DialogEntry(tkinter.Tk):
 	def create_group(self):
 		msg = '#group_name ' + self.group_name_field.get() + '\n'
 		msg += '#group_password ' + self.group_password_field.get() + '\n'
-		msg += '#group_members '
+		msg += '#group_members/'
 		for member in self.members.curselection():
-			msg += str(self.group_members[member]) + ' '
+			msg += str(self.group_members[member]) + '/'
 		self.client_socket.send(bytes(msg,'utf-8'))
 		self.destroy()
 

@@ -68,17 +68,25 @@ def message_group(msg):
 
 def create_group(msg):
 	members = []
+	is_found = False
 	group_info = msg.split('\n')
 	group_name = group_info[0].split(' ')[1]
 	group_password = group_info[1].split(' ')[1]
-	group_members = group_info[2].split(' ')
+	group_members = group_info[2].split('/')
+	print(group_info[2])
+	print(group_members)
 	group_members = [x for x in group_members]
 	del group_members[0]
+	del group_members[-1]
+	group_members = [literal_eval(x) for x in group_members]
 
 	for member in group_members:
 		for sock in clients:
-			if member in str(sock):
+			print(sock)
+			if str(member['Address']) in str(sock):
 				members.append(sock)
+				print(member)
+
 	members = list(set(members))
 	print(members)
 	msg = '#create_group ' + group_name
